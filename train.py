@@ -5,7 +5,7 @@ import cv2
 from torch.utils.data import Dataset, DataLoader
 
 from network.network_pro import Inpaint
-from losses.perceptual import PerceptualLoss
+from losses.combined import CombinedLoss
 
 class InpaintingDataset(Dataset):
     def __init__(self, img_dir, mask_dir):
@@ -43,7 +43,7 @@ def train(epochs, model, train_loader, criterion, optimizer, device):
 
             optimizer.zero_grad()
             outputs = model(imgs, masks)
-            loss = criterion(outputs, targets)
+            loss = criterion(masks, outputs, targets)
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
@@ -53,7 +53,7 @@ def train(epochs, model, train_loader, criterion, optimizer, device):
 # configs
 epochs = 10
 model = Inpaint()
-criterion = PerceptualLoss()
+criterion = CombinedLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 device = 'cpu'
 

@@ -1,7 +1,6 @@
 import torch.nn as nn
 import torch
 import torchvision.models as models
-import torchvision.transforms as transforms
 
 class PerceptualLoss(nn.Module):
     def __init__(self):
@@ -30,8 +29,8 @@ class PerceptualLoss(nn.Module):
         - loss (torch.Tensor): Perceptual loss value.
         """
         # Preprocess images using the predefined transforms
-        input = self.transforms(input)
-        target = self.transforms(target)
+        # input = self.transforms(input)
+        # target = self.transforms(target)
         
         input_features = input
         target_features = target
