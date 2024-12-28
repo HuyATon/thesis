@@ -20,8 +20,21 @@ class ReconstructionLoss(nn.Module):
         b = 1 - mask # => (0: hole, 1: valid)
         b = b.repeat(1, 3, 1, 1)
 
-        term_1 = torch.abs(b * (y_true - y_pred)) / 10
-        term_2 = torch.abs((1 - b) * (y_true - y_pred))
+        # term_1 = torch.abs(b * (y_true - y_pred)) / 10
+        # term_2 = torch.abs((1 - b) * (y_true - y_pred))
 
-        loss = torch.mean(term_1 + term_2)
+        # loss = torch.mean(term_1 + term_2)
+
+        abs_error = torch.abs(y_true - y_pred)
+
+        valid_error =  (b * abs_error)/10
+        hole_error = (1 - b) * abs_error
+
+        # L1
+        valid_loss = torch.sum(valid_error) / torch.sum(b) if torch.sum(b) > 0 else 0
+        hole_loss = torch.sum(hole_error) / torch.sum(1-b) if torch.sum(1-b) > 0 else 0
+
+        
+        loss = (hole_loss + valid_loss) / y_true.size(0) 
+
         return loss
