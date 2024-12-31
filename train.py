@@ -6,6 +6,7 @@ from torch.utils.data import Dataset, DataLoader
 
 from network.network_pro import Inpaint
 from losses.combined import CombinedLoss
+from network.discriminator import Discriminator
 
 class InpaintingDataset(Dataset):
     def __init__(self, img_dir, mask_dir):
@@ -32,18 +33,28 @@ class InpaintingDataset(Dataset):
 train_dataset = InpaintingDataset('./samples/test_img_face', './samples/test_mask_face')
 train_loader = DataLoader(train_dataset, batch_size=2)
 
-def train(epochs, model, train_loader, criterion, optimizer, device):
-    model.to(device)
+def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_criterion, disc_optimizer):
     for epoch in range(epochs):
         model.train()
         running_loss = 0.0
         for inputs, targets in train_loader:
             imgs, masks = inputs[0].to(device), inputs[1].to(device)
             targets = targets.to(device)
-
-            optimizer.zero_grad()
             outputs = model(imgs, masks)
-            loss = criterion(masks, outputs, targets)
+            
+            # Train Discriminator
+            disc_optimizer.zero_grad()
+            disc_fake_pred = disc(outputs.detach()) # avoid backpropagate through generator
+            disc_fake_loss = disc_criterion(disc_fake_pred, torch.zeros_like(disc_fake_pred))
+            disc_real_pred = disc(targets)
+            disc_real_loss = disc_criterion(disc_real_pred, torch.ones_like(disc_real_pred))
+            disc_loss = (disc_fake_loss + disc_real_loss) / 2
+            disc_loss.backward(retain_graph=True)
+            disc_optimizer.step()
+
+            # Train CMT
+            optimizer.zero_grad()
+            loss = criterion(masks, outputs, targets, disc_loss)
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
@@ -52,13 +63,19 @@ def train(epochs, model, train_loader, criterion, optimizer, device):
         print(f"Epoch {epoch+1}/{epochs}, Loss: {epoch_loss:.4f}")
 # configs
 epochs = 10
-model = Inpaint()
-criterion = CombinedLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 device = 'cpu'
+lr = 1e-3
 
+model = Inpaint().to(device)
+criterion = CombinedLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
-train(epochs, model, train_loader, criterion, optimizer, device)
+# discriminator
+disc = Discriminator().to(device)
+disc_criterion = nn.BCEWithLogitsLoss()
+disc_optimizer = torch.optim.Adam(disc.parameters(), lr = lr)
+
+train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_criterion, disc_optimizer)
 
 
 model.eval()

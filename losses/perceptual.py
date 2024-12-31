@@ -1,5 +1,4 @@
 import torch.nn as nn
-import torch
 import torchvision.models as models
 
 class PerceptualLoss(nn.Module):
@@ -17,7 +16,7 @@ class PerceptualLoss(nn.Module):
             param.requires_grad = False
 
         # Get the transformation pipeline from the weights
-        self.transforms = models.VGG16_Weights.IMAGENET1K_FEATURES.transforms()
+        # self.transforms = models.VGG16_Weights.IMAGENET1K_FEATURES.transforms()
 
     def forward(self, input, target):
         """
@@ -41,7 +40,6 @@ class PerceptualLoss(nn.Module):
             input_features = layer(input_features)
             target_features = layer(target_features)
             if i in self.layers:
-                loss += torch.subtract(input_features, target_features).pow(2).mean()
-                # loss += nn.functional.mse_loss(input_features, target_features)
+                loss += nn.functional.mse_loss(input_features, target_features)
         
         return loss
