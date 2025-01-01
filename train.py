@@ -54,7 +54,7 @@ def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_
 
             # Train CMT
             optimizer.zero_grad()
-            loss = criterion(masks, outputs, targets, disc_loss)
+            loss = criterion(masks, outputs, targets, disc_loss.item())
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
