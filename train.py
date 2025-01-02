@@ -44,17 +44,20 @@ def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_
             
             # Train Discriminator
             disc_optimizer.zero_grad()
-            disc_fake_pred = disc(outputs.detach()) # avoid backpropagate through generator
+            disc_fake_pred = disc(outputs)
             disc_fake_loss = disc_criterion(disc_fake_pred, torch.zeros_like(disc_fake_pred))
             disc_real_pred = disc(targets)
             disc_real_loss = disc_criterion(disc_real_pred, torch.ones_like(disc_real_pred))
             disc_loss = (disc_fake_loss + disc_real_loss) / 2
-            disc_loss.backward(retain_graph=True)
+            disc_loss.backward()
             disc_optimizer.step()
 
             # Train CMT
             optimizer.zero_grad()
-            loss = criterion(masks, outputs, targets, disc_loss.item())
+            outputs = model(imgs, masks)
+            disc_fake_pred = disc(outputs)
+            disc_loss = disc_criterion(disc_fake_pred, torch.ones_like(disc_fake_pred))
+            loss = criterion(masks, outputs, targets, disc_loss)
             loss.backward()
             optimizer.step()
             running_loss += loss.item()

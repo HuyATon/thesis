@@ -33,11 +33,11 @@ class Discriminator(nn.Module):
             self.conv7,
             nn.LeakyReLU(self.slope),
             nn.Flatten(),
+            self.linear
         )
 
     def forward(self, x):
         x = self.disc(x)
-        x = self.linear(x)
         return x
 
 
