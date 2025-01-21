@@ -3,17 +3,25 @@ import torch.nn as nn
 import os
 import cv2
 from torch.utils.data import Dataset, DataLoader
+import time
 
 from network.network_pro import Inpaint
 from losses.combined import CombinedLoss
 from network.discriminator import Discriminator
 
-# configs
-epochs = 10
-device = 'cuda'
+# training configs
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print('Using device:', device)
 lr = 1e-3
+EPOCHS = 9999999
+BATCH_SIZE = 32
 IMG_DIR = '/media02/nnthao05/data/celeba_hq_256'
 MASK_DIR = '/media02/nnthao05/data/celeba_hq_256_mask'
+
+# time configs
+DURATION = 47 * 60 * 60 # ~ 2 days
+SAVE_INTERVAL = 60 * 60
+START_TIME = time.time()
 
 class InpaintingDataset(Dataset):
     def __init__(self, img_dir, mask_dir):
@@ -40,13 +48,17 @@ class InpaintingDataset(Dataset):
 # train_dataset = InpaintingDataset('./samples/test_img_face', './samples/test_mask_face')
 # train_loader = DataLoader(train_dataset, batch_size=2)
 train_dataset = InpaintingDataset(img_dir= IMG_DIR, mask_dir= MASK_DIR)
-train_loader = DataLoader(train_dataset, batch_size=2)
+train_loader = DataLoader(train_dataset, batch_size= BATCH_SIZE)
 
 def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_criterion, disc_optimizer):
+    model.train()
+    lastest_checkpoint_time = time.time()
     for epoch in range(epochs):
-        model.train()
-        running_loss = 0.0
-        for inputs, targets in train_loader:
+        elapsed_time = time.time() - START_TIME
+        if elapsed_time > DURATION:
+            return # stop training
+
+        for batch_idx, (inputs, targets) in enumerate(train_loader):
             imgs, masks = inputs[0].to(device), inputs[1].to(device)
             targets = targets.to(device)
             outputs = model(imgs, masks)
@@ -69,10 +81,13 @@ def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_
             loss = criterion(masks, outputs, targets, disc_loss)
             loss.backward()
             optimizer.step()
-            running_loss += loss.item()
-        
-        epoch_loss = running_loss / len(train_loader)
-        print(f"Epoch {epoch+1}/{epochs}, Loss: {epoch_loss:.4f}")
+
+            # Saved checkpoint after SAVE_INTERVAL
+            if time.time() - lastest_checkpoint_time > SAVE_INTERVAL:
+                lastest_checkpoint_time = time.time()
+                torch.save(model.state_dict(), f'../checkpoints/model_{epoch}.pth')
+                torch.save(disc.state_dict(), f'../checkpoints/disc_{epoch}.pth')
+
 
 
 model = Inpaint().to(device)
@@ -84,7 +99,7 @@ disc = Discriminator().to(device)
 disc_criterion = nn.BCEWithLogitsLoss()
 disc_optimizer = torch.optim.Adam(disc.parameters(), lr = lr)
 
-train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_criterion, disc_optimizer)
+train(EPOCHS, model, train_loader, criterion, optimizer, device, disc, disc_criterion, disc_optimizer)
 
 
 model.eval()
