@@ -12,8 +12,8 @@ from network.discriminator import Discriminator
 epochs = 10
 device = 'cuda'
 lr = 1e-3
-IMG_DIR = '/media02/nnthao05/celeba_hq_256'
-MASK_DIR = '/media02/nnthao05/celeba_hq_256_mask'
+IMG_DIR = '/media02/nnthao05/data/celeba_hq_256'
+MASK_DIR = '/media02/nnthao05/data/celeba_hq_256_mask'
 
 class InpaintingDataset(Dataset):
     def __init__(self, img_dir, mask_dir):
