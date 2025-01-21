@@ -8,6 +8,13 @@ from network.network_pro import Inpaint
 from losses.combined import CombinedLoss
 from network.discriminator import Discriminator
 
+# configs
+epochs = 10
+device = 'cuda'
+lr = 1e-3
+IMG_DIR = '/media02/nnthao05/celeba_hq_256'
+MASK_DIR = '/media02/nnthao05/celeba_hq_256_mask'
+
 class InpaintingDataset(Dataset):
     def __init__(self, img_dir, mask_dir):
         self.img_dir = img_dir
@@ -30,7 +37,9 @@ class InpaintingDataset(Dataset):
 
         return (img, mask), img                     # img (3, 256, 256), mask (1, 256, 256)
 
-train_dataset = InpaintingDataset('./samples/test_img_face', './samples/test_mask_face')
+# train_dataset = InpaintingDataset('./samples/test_img_face', './samples/test_mask_face')
+# train_loader = DataLoader(train_dataset, batch_size=2)
+train_dataset = InpaintingDataset(img_dir= IMG_DIR, mask_dir= MASK_DIR)
 train_loader = DataLoader(train_dataset, batch_size=2)
 
 def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_criterion, disc_optimizer):
@@ -64,10 +73,7 @@ def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_
         
         epoch_loss = running_loss / len(train_loader)
         print(f"Epoch {epoch+1}/{epochs}, Loss: {epoch_loss:.4f}")
-# configs
-epochs = 10
-device = 'cuda'
-lr = 1e-3
+
 
 model = Inpaint().to(device)
 criterion = CombinedLoss()
