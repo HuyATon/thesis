@@ -66,7 +66,7 @@ def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_
         print(f"Epoch {epoch+1}/{epochs}, Loss: {epoch_loss:.4f}")
 # configs
 epochs = 10
-device = 'cpu'
+device = 'cuda'
 lr = 1e-3
 
 model = Inpaint().to(device)
