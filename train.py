@@ -17,6 +17,7 @@ EPOCHS = 9999999
 BATCH_SIZE = 32
 IMG_DIR = '/media02/nnthao05/data/celeba_hq_256'
 MASK_DIR = '/media02/nnthao05/data/celeba_hq_256_mask'
+CHECKPOINTS_DIR = '/media02/nnthao05/code/cmt_git/checkpoints'
 
 # time configs
 DURATION = 47 * 60 * 60 # ~ 2 days
@@ -49,6 +50,7 @@ class InpaintingDataset(Dataset):
 # train_loader = DataLoader(train_dataset, batch_size=2)
 train_dataset = InpaintingDataset(img_dir= IMG_DIR, mask_dir= MASK_DIR)
 train_loader = DataLoader(train_dataset, batch_size= BATCH_SIZE)
+
 
 def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_criterion, disc_optimizer):
     model.train()
@@ -85,9 +87,22 @@ def train(epochs, model, train_loader, criterion, optimizer, device, disc, disc_
             # Saved checkpoint after SAVE_INTERVAL
             if time.time() - lastest_checkpoint_time > SAVE_INTERVAL:
                 lastest_checkpoint_time = time.time()
-                torch.save(model.state_dict(), f'../checkpoints/model_{epoch}.pth')
-                torch.save(disc.state_dict(), f'../checkpoints/disc_{epoch}.pth')
-
+                model_checkpoint_dest = os.path.join(CHECKPOINTS_DIR, f'model_{epoch}.pth')
+                disc_checkpoint_dest = os.path.join(CHECKPOINTS_DIR, f'disc_{epoch}.pth')
+                model_checkpoint = {
+                    'epoch': epoch,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'loss': loss
+                }
+                disc_checkpoint = {
+                    'epoch': epoch,
+                    'model_state_dict': disc.state_dict(),
+                    'optimizer_state_dict': disc_optimizer.state_dict(),
+                    'loss': disc_loss
+                }
+                torch.save(model_checkpoint, model_checkpoint_dest)
+                torch.save(disc_checkpoint, disc_checkpoint_dest)
 
 
 model = Inpaint().to(device)
