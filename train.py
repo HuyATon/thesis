@@ -14,7 +14,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print('Using device:', device)
 lr = 1e-3
 EPOCHS = 9999999
-BATCH_SIZE = 32
+BATCH_SIZE = 4
 IMG_DIR = '/media02/nnthao05/data/celeba_hq_256'
 MASK_DIR = '/media02/nnthao05/data/celeba_hq_256_mask'
 CHECKPOINTS_DIR = '/media02/nnthao05/code/cmt_git/checkpoints'
